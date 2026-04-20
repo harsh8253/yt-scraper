@@ -1,0 +1,23 @@
+{
+  "name": "youtube-ask-scraper",
+  "version": "1.0.0",
+  "description": "Scrape YouTube Ask-panel summaries from the latest video of multiple channels using Puppeteer.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "web": "node src/server.js",
+    "test:smoke": "node src/index.js --help",
+    "test:web": "node src/server.js --check"
+  },
+  "keywords": [
+    "youtube",
+    "puppeteer",
+    "scraper"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+    "puppeteer-core": "^24.9.0"
+  }
+}

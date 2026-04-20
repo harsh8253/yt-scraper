@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Ask Scraper</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">YouTube Ask-Panel Scraper</p>
+        <h1>Paste channel links, launch the browser flow, and collect video summaries in one place.</h1>
+        <p class="subcopy">
+          This UI uses your existing Puppeteer-connected scraper. It opens YouTube in the configured browser
+          profile, visits each latest video, clicks <strong>Ask</strong>, then extracts the generated summary.
+        </p>
+      </section>
+
+      <section class="panel controls">
+        <div class="panel-header">
+          <div>
+            <h2>Channel Input</h2>
+            <p>One channel per line. Handles like <code>@CleoAbram</code> also work.</p>
+          </div>
+          <div class="status-pill" id="health-pill">Checking browser profile...</div>
+        </div>
+
+        <label class="input-label" for="channels">Channels</label>
+        <textarea id="channels" placeholder="https://www.youtube.com/@CleoAbram&#10;https://www.youtube.com/@Veritasium"></textarea>
+
+        <div class="actions">
+          <button id="run-button" class="primary-button">Get Summaries</button>
+          <button id="sample-button" class="ghost-button" type="button">Load Sample</button>
+        </div>
+
+        <p class="helper">
+          If YouTube still shows <code>Sign in</code> in the launched browser, first run
+          <code>node src\index.js --login-setup</code> in the terminal and log in inside that Puppeteer browser.
+        </p>
+      </section>
+
+      <section class="panel results-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Results</h2>
+            <p id="results-meta">No run yet.</p>
+          </div>
+        </div>
+        <div id="results" class="results-empty">
+          Add one or more channels, then click <strong>Get Summaries</strong>.
+        </div>
+      </section>
+    </main>
+
+    <template id="result-template">
+      <article class="result-card">
+        <div class="result-topline">
+          <span class="result-status"></span>
+          <a class="result-video-link" target="_blank" rel="noreferrer">Open Video</a>
+        </div>
+        <h3 class="result-title"></h3>
+        <p class="result-channel"></p>
+        <p class="result-error"></p>
+        <pre class="result-summary"></pre>
+      </article>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
