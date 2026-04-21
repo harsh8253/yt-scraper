@@ -6,6 +6,8 @@ const ASK_PANEL_TIMEOUT_MS = 45000;
 const SUMMARY_TIMEOUT_MS = 60000;
 const NAVIGATION_TIMEOUT_MS = 45000;
 const OUTPUT_PATH = path.join(process.cwd(), "output", "results.json");
+const VIDEO_LINKS_OUTPUT_PATH = path.join(process.cwd(), "output", "video-links.json");
+const MAX_VIDEO_LINKS_PER_CHANNEL = Number(process.env.MAX_VIDEO_LINKS_PER_CHANNEL || 1000);
 const CHROME_PROFILE_DIRECTORY = process.env.CHROME_PROFILE_DIRECTORY || "";
 const CHROME_PROFILE_MODE = process.env.CHROME_PROFILE_MODE || "persistent";
 const KEEP_PROFILE_COPY = process.env.KEEP_PROFILE_COPY === "1";
@@ -69,5 +71,7 @@ module.exports = {
   OUTPUT_PATH,
   PERSISTENT_PROFILE_ROOT,
   PROFILE_COPY_ROOT,
-  SUMMARY_TIMEOUT_MS
+  SUMMARY_TIMEOUT_MS,
+  VIDEO_LINKS_OUTPUT_PATH,
+  MAX_VIDEO_LINKS_PER_CHANNEL
 };

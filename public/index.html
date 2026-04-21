@@ -37,6 +37,7 @@
 
         <div class="actions">
           <button id="run-button" class="primary-button">Get Summaries</button>
+          <button id="links-button" class="secondary-button" type="button">Get All Video Links</button>
           <button id="sample-button" class="ghost-button" type="button">Load Sample</button>
         </div>
 
@@ -69,6 +70,19 @@
         <p class="result-channel"></p>
         <p class="result-error"></p>
         <pre class="result-summary"></pre>
+      </article>
+    </template>
+
+    <template id="video-links-template">
+      <article class="result-card">
+        <div class="result-topline">
+          <span class="result-status"></span>
+          <button class="copy-links-button" type="button">Copy Links</button>
+        </div>
+        <h3 class="result-title"></h3>
+        <p class="result-channel"></p>
+        <p class="result-error"></p>
+        <ol class="video-links-list"></ol>
       </article>
     </template>
 

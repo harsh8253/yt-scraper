@@ -10,6 +10,7 @@ const {
   CHROME_USER_DATA_DIR,
   DEFAULT_TIMEOUT_MS,
   KEEP_PROFILE_COPY,
+  MAX_VIDEO_LINKS_PER_CHANNEL,
   NAVIGATION_TIMEOUT_MS,
   PROFILE_COPY_ROOT,
   PERSISTENT_PROFILE_ROOT,
@@ -130,10 +131,11 @@ async function safeCopyRecursive(sourceDir, targetDir) {
 }
 
 async function createTemporaryProfileCopy() {
-  const sourceProfileDir = path.join(CHROME_USER_DATA_DIR, await resolveProfileDirectory(CHROME_USER_DATA_DIR));
+  const profileDirectory = await resolveProfileDirectory(CHROME_USER_DATA_DIR);
+  const sourceProfileDir = path.join(CHROME_USER_DATA_DIR, profileDirectory);
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const tempUserDataDir = path.join(PROFILE_COPY_ROOT, `profile-copy-${timestamp}`);
-  const tempProfileDir = path.join(tempUserDataDir, CHROME_PROFILE_DIRECTORY);
+  const tempProfileDir = path.join(tempUserDataDir, profileDirectory);
 
   if (!(await fileExists(sourceProfileDir))) {
     throw new Error(`Chrome profile directory not found: ${sourceProfileDir}`);
@@ -164,6 +166,7 @@ async function createTemporaryProfileCopy() {
       }
     },
     isTemporaryCopy: true,
+    profileDirectory,
     userDataDir: tempUserDataDir
   };
 }
@@ -377,6 +380,105 @@ async function getLatestVideoUrl(page, channelVideosUrl) {
   }
 
   return null;
+}
+
+function normalizeVideoUrl(rawUrl) {
+  if (!rawUrl) {
+    return null;
+  }
+
+  const url = new URL(rawUrl, "https://www.youtube.com");
+  const videoId = url.searchParams.get("v");
+  if (!videoId) {
+    return null;
+  }
+
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+async function extractVisibleVideoLinks(page) {
+  return page.evaluate(() => {
+    const anchors = Array.from(document.querySelectorAll('a[href*="/watch?v="]'));
+    return anchors
+      .map((anchor) => {
+        const href = anchor.href || anchor.getAttribute("href") || "";
+        const title =
+          anchor.getAttribute("title") ||
+          anchor.getAttribute("aria-label") ||
+          anchor.closest("ytd-rich-grid-media")?.querySelector("#video-title")?.textContent ||
+          anchor.closest("ytd-grid-video-renderer")?.querySelector("#video-title")?.textContent ||
+          "";
+
+        return {
+          title: title.trim(),
+          url: href
+        };
+      })
+      .filter((item) => item.url);
+  });
+}
+
+async function collectVideoLinksFromChannel(page, channelInput) {
+  const scrapedAt = getTimestamp();
+  const channelVideosUrl = toVideosUrl(channelInput);
+  const result = {
+    channelInput,
+    channelVideosUrl,
+    status: "pending",
+    errorMessage: null,
+    videos: [],
+    totalVideos: 0,
+    scrapedAt
+  };
+
+  try {
+    await gotoWithRetry(page, channelVideosUrl);
+
+    const collected = new Map();
+    let stableScrolls = 0;
+    let lastCount = 0;
+
+    while (
+      stableScrolls < 6 &&
+      collected.size < MAX_VIDEO_LINKS_PER_CHANNEL
+    ) {
+      const visibleLinks = await extractVisibleVideoLinks(page);
+      for (const item of visibleLinks) {
+        const normalizedUrl = normalizeVideoUrl(item.url);
+        if (!normalizedUrl || collected.has(normalizedUrl)) {
+          continue;
+        }
+
+        collected.set(normalizedUrl, {
+          title: item.title || `Video ${collected.size + 1}`,
+          url: normalizedUrl
+        });
+      }
+
+      if (collected.size === lastCount) {
+        stableScrolls += 1;
+      } else {
+        stableScrolls = 0;
+        lastCount = collected.size;
+      }
+
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForNetworkIdle({ idleTime: 800, timeout: 8000 }).catch(() => {});
+      await sleep(900);
+    }
+
+    result.videos = Array.from(collected.values());
+    result.totalVideos = result.videos.length;
+    result.status = result.totalVideos > 0 ? "success" : "no_videos_found";
+    if (result.totalVideos === 0) {
+      result.errorMessage = "Could not find any video links on the channel videos page.";
+    }
+    return result;
+  } catch (error) {
+    result.status = "navigation_failed";
+    result.errorMessage = error instanceof Error ? error.message : String(error);
+    return result;
+  }
 }
 
 async function clickAskButton(page) {
@@ -601,6 +703,53 @@ async function scrapeChannels(channelUrls) {
   return results;
 }
 
+async function collectAllVideoLinks(channelUrls) {
+  let browser;
+  let launchContext;
+  try {
+    const browserSession = await createBrowser();
+    browser = browserSession.browser;
+    launchContext = browserSession.launchContext;
+    if (launchContext.isTemporaryCopy) {
+      console.log(`Using temporary Chrome profile copy: ${launchContext.userDataDir}`);
+    }
+    if (launchContext.isPersistentProfile) {
+      console.log(`Using persistent Puppeteer profile: ${launchContext.userDataDir}`);
+    }
+    console.log(`Using Chrome profile directory: ${launchContext.profileDirectory}`);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes("The browser is already running for")
+    ) {
+      throw new Error(
+        `Chrome profile is locked because Chrome is already running. Close Chrome and retry, or set CHROME_USER_DATA_DIR / CHROME_PROFILE_DIRECTORY to a different profile copy. Original error: ${error.message}`
+      );
+    }
+    throw error;
+  }
+
+  const page = await browser.newPage();
+  page.setDefaultTimeout(DEFAULT_TIMEOUT_MS);
+
+  const results = [];
+
+  try {
+    for (const channelUrl of channelUrls) {
+      const result = await collectVideoLinksFromChannel(page, channelUrl);
+      if (result.status !== "success") {
+        await saveDebugSnapshot(page, channelUrl);
+      }
+      results.push(result);
+    }
+  } finally {
+    await browser.close();
+    await cleanupLaunchContext(launchContext);
+  }
+
+  return results;
+}
+
 async function openPersistentLoginSetup() {
   const previousMode = process.env.CHROME_PROFILE_MODE;
   process.env.CHROME_PROFILE_MODE = "persistent";
@@ -642,6 +791,7 @@ async function openPersistentLoginSetup() {
 }
 
 module.exports = {
+  collectAllVideoLinks,
   createTemporaryProfileCopy,
   createBrowser,
   openPersistentLoginSetup,

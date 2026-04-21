@@ -46,7 +46,10 @@ Then open:
 http://localhost:3000
 ```
 
-Paste one channel per line and click **Get Summaries**. The page calls the same Puppeteer scraper used by the CLI and saves results to `output/results.json`.
+Paste one channel per line and use either action:
+
+- **Get Summaries** opens each channel's latest video and extracts the YouTube Ask summary.
+- **Get All Video Links** opens each channel's Videos tab, scrolls through the video grid, collects canonical watch links, and saves them to `output/video-links.json`.
 
 ## Output
 

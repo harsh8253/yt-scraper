@@ -152,6 +152,7 @@ button {
 }
 
 .primary-button,
+.secondary-button,
 .ghost-button {
   padding: 14px 20px;
   transition: transform 160ms ease, background 160ms ease, color 160ms ease;
@@ -164,13 +165,21 @@ button {
 }
 
 .primary-button:hover,
+.secondary-button:hover,
 .ghost-button:hover {
   transform: translateY(-1px);
 }
 
-.primary-button:disabled {
+.primary-button:disabled,
+.secondary-button:disabled {
   cursor: wait;
   opacity: 0.72;
+}
+
+.secondary-button {
+  background: #20150f;
+  color: #fff8f4;
+  font-weight: 700;
 }
 
 .ghost-button {
@@ -250,6 +259,14 @@ pre {
   text-decoration: none;
 }
 
+.copy-links-button {
+  padding: 9px 13px;
+  background: rgba(32, 21, 15, 0.08);
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 .result-title {
   margin: 14px 0 8px;
   font-size: 1.22rem;
@@ -276,6 +293,32 @@ pre {
   color: var(--text);
   font-size: 0.93rem;
   line-height: 1.55;
+}
+
+.video-links-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-left: 22px;
+}
+
+.video-links-list li {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(32, 21, 15, 0.05);
+}
+
+.video-links-list a {
+  color: var(--accent-dark);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.video-links-list small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
 }
 
 @media (max-width: 720px) {

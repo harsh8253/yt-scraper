@@ -75,6 +75,12 @@ Results are saved to:
 output/results.json
 ```
 
+Collected channel video links are saved to:
+
+```text
+output/video-links.json
+```
+
 ## 6. Run The Frontend
 
 Start the local web app:
@@ -92,8 +98,9 @@ http://localhost:3000
 Then:
 
 1. Paste one channel per line.
-2. Click **Get Summaries**.
-3. Wait for Puppeteer to open YouTube and scrape each latest video.
+2. Click **Get Summaries** to summarize the latest video from each channel.
+3. Click **Get All Video Links** to collect all visible video links from each channel's Videos tab.
+4. Wait for Puppeteer to open YouTube and finish the selected browser workflow.
 
 ## 7. Useful Environment Variables
 
